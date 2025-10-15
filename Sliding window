@@ -1,0 +1,82 @@
+import java.util.Scanner;
+
+public class SlidingWindowProtocol {
+    static Scanner sc = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        System.out.println("1. Go-Back-N");
+        System.out.println("2. Selective Repeat");
+        System.out.print("Choose protocol (1/2): ");
+        int choice = sc.nextInt();
+
+        System.out.print("Enter number of frames to send: ");
+        int totalFrames = sc.nextInt();
+
+        System.out.print("Enter window size: ");
+        int windowSize = sc.nextInt();
+
+        boolean[] ack = new boolean[totalFrames];
+
+        if (choice == 1) {
+            goBackN(totalFrames, windowSize, ack);
+        } else if (choice == 2) {
+            selectiveRepeat(totalFrames, windowSize, ack);
+        } else {
+            System.out.println("Invalid choice.");
+        }
+    }
+
+    // GO-BACK-N simulation
+    static void goBackN(int total, int window, boolean[] ack) {
+        int i = 0;
+        while (i < total) {
+            System.out.println("\nSending window:");
+            for (int j = 0; j < window && (i + j) < total; j++) {
+                System.out.println("Sent Frame " + (i + j));
+            }
+
+            System.out.print("Enter lost frame number (-1 if none): ");
+            int lost = sc.nextInt();
+
+            if (lost >= i && lost < i + window) {
+                System.out.println("ACKs received only till frame " + (lost - 1));
+                System.out.println("Go-Back-N: Resending from frame " + lost);
+                i = lost; // Go back to lost frame
+            } else {
+                i += window; // Move window forward
+            }
+        }
+    }
+
+    // SELECTIVE REPEAT simulation
+    static void selectiveRepeat(int total, int window, boolean[] ack) {
+        int i = 0;
+        while (i < total) {
+            for (int j = 0; j < window && (i + j) < total; j++) {
+                int frame = i + j;
+                System.out.println("Sent Frame " + frame);
+                System.out.print("Is Frame " + frame + " received? (1=Yes / 0=No): ");
+                int received = sc.nextInt();
+                if (received == 1)
+                    ack[frame] = true;
+            }
+
+            // Resend only missing frames
+            for (int j = 0; j < window && (i + j) < total; j++) {
+                int frame = i + j;
+                if (!ack[frame]) {
+                    System.out.println("Resending Frame " + frame);
+                    System.out.print("Now received? (1=Yes / 0=No): ");
+                    int received = sc.nextInt();
+                    if (received == 1)
+                        ack[frame] = true;
+                }
+            }
+
+            // Slide window forward for acknowledged frames
+            while (i < total && ack[i]) {
+                i++;
+            }
+        }
+    }
+}
