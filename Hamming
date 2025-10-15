@@ -1,0 +1,110 @@
+import java.util.Scanner;
+
+public class HammingCode {
+
+    // Function to generate Hamming Code
+    static int[] generateHammingCode(int[] data, int m, int r) {
+        int[] hamming = new int[m + r + 1];
+        int j = 0, k = 1;
+
+        // Insert data bits, leaving parity bit positions as 0
+        for (int i = 1; i <= m + r; i++) {
+            if (i == Math.pow(2, j)) {
+                hamming[i] = 0; // parity bit placeholder
+                j++;
+            } else {
+                hamming[i] = data[data.length - k];
+                k++;
+            }
+        }
+
+        // Calculate parity bits
+        for (int i = 0; i < r; i++) {
+            int x = (int) Math.pow(2, i);
+            int parity = 0;
+
+            for (int j2 = x; j2 <= m + r; j2++) {
+                if (((j2 >> i) & 1) == 1) {
+                    parity ^= hamming[j2];
+                }
+            }
+            hamming[x] = parity;
+        }
+
+        return hamming;
+    }
+
+    // Function to detect and correct an error
+    static void detectAndCorrect(int[] hamming, int r) {
+        int errorPos = 0;
+
+        // Calculate parity checks
+        for (int i = 0; i < r; i++) {
+            int x = (int) Math.pow(2, i);
+            int parity = 0;
+
+            for (int j = x; j < hamming.length; j++) {
+                if (((j >> i) & 1) == 1) {
+                    parity ^= hamming[j];
+                }
+            }
+
+            if (parity != 0)
+                errorPos += x;
+        }
+
+        if (errorPos == 0) {
+            System.out.println("\n✅ No error detected in the received code.");
+        } else {
+            System.out.println("\n❌ Error detected at bit position: " + errorPos);
+            hamming[errorPos] = hamming[errorPos] == 0 ? 1 : 0;
+            System.out.println("✅ Error corrected successfully!");
+        }
+
+        System.out.print("\nCorrected Code (LSB → MSB): ");
+        for (int i = hamming.length - 1; i > 0; i--) {
+            System.out.print(hamming[i] + " ");
+        }
+        System.out.println();
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        // Step 1: Input data bits
+        System.out.print("Enter number of data bits: ");
+        int m = sc.nextInt();
+        int[] data = new int[m];
+        System.out.println("Enter data bits (MSB to LSB): ");
+        for (int i = 0; i < m; i++) {
+            data[i] = sc.nextInt();
+        }
+
+        // Step 2: Calculate parity bits
+        int r = 0;
+        while (Math.pow(2, r) < (m + r + 1)) {
+            r++;
+        }
+
+        // Step 3: Generate Hamming Code
+        int[] hamming = generateHammingCode(data, m, r);
+
+        System.out.print("\nGenerated Hamming Code (LSB → MSB): ");
+        for (int i = hamming.length - 1; i > 0; i--) {
+            System.out.print(hamming[i] + " ");
+        }
+        System.out.println();
+
+        // Step 4: Simulate error
+        System.out.print("\nEnter position to introduce error (0 for no error): ");
+        int error = sc.nextInt();
+        if (error != 0) {
+            hamming[error] = hamming[error] == 0 ? 1 : 0;
+        }
+
+        // Step 5: Detect and correct
+        detectAndCorrect(hamming, r);
+
+        sc.close();
+    }
+}
