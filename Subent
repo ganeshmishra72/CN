@@ -1,0 +1,101 @@
+import java.util.*;
+
+public class SubnetCalc16Bit {
+
+    // Convert dotted IP string to int array
+    public static int[] ipToArray(String ip) {
+        String[] parts = ip.split("\\.");
+        int[] arr = new int[4];
+        for (int i = 0; i < 4; i++) {
+            arr[i] = Integer.parseInt(parts[i]);
+        }
+        return arr;
+    }
+
+    // Convert int array to dotted IP string
+    public static String arrayToIp(int[] arr) {
+        return arr[0] + "." + arr[1] + "." + arr[2] + "." + arr[3];
+    }
+
+    // Count subnet mask bits
+    public static int getLength(int[] mask) {
+        int count = 0;
+        for (int i = 0; i < 4; i++) {
+            int m = mask[i];
+            while (m != 0) {
+                count += (m & 1);
+                m >>= 1;
+            }
+        }
+        return count;
+    }
+
+    // Get default mask bits for class
+    public static int getDefault(int octet) {
+        if (octet >= 0 && octet <= 127) return 8;   // Class A
+        if (octet >= 128 && octet <= 191) return 16; // Class B
+        if (octet >= 192 && octet <= 223) return 24; // Class C
+        return 0;
+    }
+
+    // Bitwise AND for network
+    public static int[] bitwiseAnd(int[] ip, int[] mask) {
+        int[] res = new int[4];
+        for (int i = 0; i < 4; i++) {
+            res[i] = ip[i] & mask[i];
+        }
+        return res;
+    }
+
+    // Broadcast = network OR (inverse mask)
+    public static int[] getBroadcastNetwork(int[] network, int[] mask) {
+        int[] res = new int[4];
+        for (int i = 0; i < 4; i++) {
+            res[i] = network[i] | (~mask[i] & 255);
+        }
+        return res;
+    }
+
+    // Get usable range: network+1 → broadcast-1
+    public static String getRange(int[] network, int[] broadcast) {
+        int[] first = network.clone();
+        int[] last = broadcast.clone();
+
+        first[3] += 1;   // first usable host
+        last[3] -= 1;    // last usable host
+
+        return arrayToIp(first) + " to " + arrayToIp(last);
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.print("Enter the hostIp: ");
+        String hostip = sc.nextLine();
+
+        System.out.print("Enter the Subnet: ");
+        String subnet = sc.nextLine();
+
+        int ip[] = ipToArray(hostip);
+        int subnetMask[] = ipToArray(subnet);
+
+        int n = getLength(subnetMask);
+        int classDefault = getDefault(ip[0]);
+        int borrowedBits = n - classDefault;
+
+        int totalLength = (int) Math.pow(2, 32 - n);
+        int usableHosts = totalLength > 2 ? totalLength - 2 : 0;
+        int numberOfSubnets = borrowedBits >= 0 ? (int) Math.pow(2, borrowedBits) : 0;
+
+        int majorNetwork[] = bitwiseAnd(ip, subnetMask);
+        int broadcast[] = getBroadcastNetwork(majorNetwork, subnetMask);
+
+        System.out.println("===================================");
+        System.out.println("Network Address : " + arrayToIp(majorNetwork));
+        System.out.println("Broadcast Address: " + arrayToIp(broadcast));
+        System.out.println("Range           : " + getRange(majorNetwork, broadcast));
+        System.out.println("Total Subnets   : " + numberOfSubnets);
+        System.out.println("Hosts per Subnet: " + usableHosts);
+        System.out.println("===================================");
+    }
+}
